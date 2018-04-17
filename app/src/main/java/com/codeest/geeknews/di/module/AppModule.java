@@ -1,8 +1,13 @@
 package com.codeest.geeknews.di.module;
 
 import com.codeest.geeknews.app.App;
+import com.codeest.geeknews.model.DataManager;
+import com.codeest.geeknews.model.db.DBHelper;
 import com.codeest.geeknews.model.db.RealmHelper;
+import com.codeest.geeknews.model.http.HttpHelper;
 import com.codeest.geeknews.model.http.RetrofitHelper;
+import com.codeest.geeknews.model.prefs.ImplPreferencesHelper;
+import com.codeest.geeknews.model.prefs.PreferencesHelper;
 
 import javax.inject.Singleton;
 
@@ -29,13 +34,25 @@ public class AppModule {
 
     @Provides
     @Singleton
-    RetrofitHelper provideRetrofitHelper() {
-        return new RetrofitHelper();
+    HttpHelper provideHttpHelper(RetrofitHelper retrofitHelper) {
+        return retrofitHelper;
     }
 
     @Provides
     @Singleton
-    RealmHelper provideRealmHelper() {
-        return new RealmHelper(application);
+    DBHelper provideDBHelper(RealmHelper realmHelper) {
+        return realmHelper;
+    }
+
+    @Provides
+    @Singleton
+    PreferencesHelper providePreferencesHelper(ImplPreferencesHelper implPreferencesHelper) {
+        return implPreferencesHelper;
+    }
+
+    @Provides
+    @Singleton
+    DataManager provideDataManager(HttpHelper httpHelper, DBHelper DBHelper, PreferencesHelper preferencesHelper) {
+        return new DataManager(httpHelper, DBHelper, preferencesHelper);
     }
 }

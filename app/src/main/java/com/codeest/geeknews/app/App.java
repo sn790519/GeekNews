@@ -9,21 +9,16 @@ import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 
+import com.codeest.geeknews.component.InitializeService;
 import com.codeest.geeknews.di.component.AppComponent;
 import com.codeest.geeknews.di.component.DaggerAppComponent;
 import com.codeest.geeknews.di.module.AppModule;
-import com.codeest.geeknews.util.SystemUtil;
-import com.codeest.geeknews.widget.AppBlockCanaryContext;
-import com.github.moduth.blockcanary.BlockCanary;
-import com.orhanobut.logger.Logger;
-import com.squareup.leakcanary.LeakCanary;
-import com.tencent.bugly.crashreport.CrashReport;
-import com.tencent.smtt.sdk.QbSdk;
+import com.codeest.geeknews.di.module.HttpModule;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.codeest.geeknews.util.LogUtil.isDebug;
+import io.realm.Realm;
 
 /**
  * Created by codeest on 2016/8/2.
@@ -56,44 +51,16 @@ public class App extends Application{
         //初始化屏幕宽高
         getScreenSize();
 
-        //初始化日志
-        Logger.init(getPackageName()).hideThreadInfo();
+        //初始化数据库
+        Realm.init(getApplicationContext());
 
-        //初始化错误收集
-//        CrashHandler.init(new CrashHandler(getApplicationContext()));
-        initBugly();
-
-        //初始化内存泄漏检测
-        LeakCanary.install(this);
-
-        //初始化过度绘制检测
-        BlockCanary.install(this, new AppBlockCanaryContext()).start();
-
-        //初始化tbs x5 webview
-        QbSdk.allowThirdPartyAppDownload(true);
-        QbSdk.initX5Environment(getApplicationContext(), QbSdk.WebviewInitType.FIRSTUSE_AND_PRELOAD, new QbSdk.PreInitCallback() {
-            @Override
-            public void onCoreInitFinished() {
-            }
-
-            @Override
-            public void onViewInitFinished(boolean b) {
-            }
-        });
+        //在子线程中完成其他初始化
+        InitializeService.start(this);
     }
 
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         MultiDex.install(this);
-    }
-
-    private void initBugly() {
-        Context context = getApplicationContext();
-        String packageName = context.getPackageName();
-        String processName = SystemUtil.getProcessName(android.os.Process.myPid());
-        CrashReport.UserStrategy strategy = new CrashReport.UserStrategy(context);
-        strategy.setUploadProcess(processName == null || processName.equals(packageName));
-        CrashReport.initCrashReport(context, Constants.BUGLY_ID, isDebug, strategy);
     }
 
     public void addActivity(Activity act) {
@@ -141,6 +108,7 @@ public class App extends Application{
         if (appComponent == null) {
             appComponent = DaggerAppComponent.builder()
                     .appModule(new AppModule(instance))
+                    .httpModule(new HttpModule())
                     .build();
         }
         return appComponent;

@@ -19,9 +19,9 @@ import com.codeest.geeknews.app.Constants;
 import com.codeest.geeknews.base.BaseActivity;
 import com.codeest.geeknews.component.RxBus;
 import com.codeest.geeknews.component.UpdateService;
-import com.codeest.geeknews.model.bean.SearchEvent;
-import com.codeest.geeknews.presenter.MainPresenter;
-import com.codeest.geeknews.presenter.contract.MainContract;
+import com.codeest.geeknews.model.event.SearchEvent;
+import com.codeest.geeknews.presenter.main.MainPresenter;
+import com.codeest.geeknews.base.contract.main.MainContract;
 import com.codeest.geeknews.ui.gank.fragment.GankMainFragment;
 import com.codeest.geeknews.ui.gold.fragment.GoldMainFragment;
 import com.codeest.geeknews.ui.main.fragment.AboutFragment;
@@ -30,11 +30,9 @@ import com.codeest.geeknews.ui.main.fragment.SettingFragment;
 import com.codeest.geeknews.ui.vtex.fragment.VtexMainFragment;
 import com.codeest.geeknews.ui.wechat.fragment.WechatMainFragment;
 import com.codeest.geeknews.ui.zhihu.fragment.ZhihuMainFragment;
-import com.codeest.geeknews.util.SharedPreferenceUtil;
-import com.codeest.geeknews.util.SnackbarUtil;
 import com.codeest.geeknews.util.SystemUtil;
 import com.miguelcatalan.materialsearchview.MaterialSearchView;
-import com.tbruyelle.rxpermissions.RxPermissions;
+import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import butterknife.BindView;
 import me.yokeyword.fragmentation.SupportFragment;
@@ -54,7 +52,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     @BindView(R.id.view_search)
     MaterialSearchView mSearchView;
 
-    ActionBarDrawerToggle mDrawerToggle;
     ZhihuMainFragment mZhihuFragment;
     GankMainFragment mGankFragment;
     WechatMainFragment mWechatFragment;
@@ -63,8 +60,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     LikeFragment mLikeFragment;
     SettingFragment mSettingFragment;
     AboutFragment mAboutFragment;
+
     MenuItem mLastMenuItem;
     MenuItem mSearchMenuItem;
+    ActionBarDrawerToggle mDrawerToggle;
 
     private int hideFragment = Constants.TYPE_ZHIHU;
     private int showFragment = Constants.TYPE_ZHIHU;
@@ -87,9 +86,9 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null) {
-            SharedPreferenceUtil.setNightModeState(false);
+            mPresenter.setNightModeState(false);
         } else {
-            showFragment = SharedPreferenceUtil.getCurrentItem();
+            showFragment = mPresenter.getCurrentItem();
             hideFragment = Constants.TYPE_ZHIHU;
             showHideFragment(getTargetFragment(showFragment), getTargetFragment(hideFragment));
             mNavigationView.getMenu().findItem(R.id.drawer_zhihu).setChecked(false);
@@ -155,7 +154,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
                     mLastMenuItem.setChecked(false);
                 }
                 mLastMenuItem = menuItem;
-                SharedPreferenceUtil.setCurrentItem(showFragment);
+                mPresenter.setCurrentItem(showFragment);
                 menuItem.setChecked(true);
                 mToolbar.setTitle(menuItem.getTitle());
                 mDrawerLayout.closeDrawers();
@@ -180,8 +179,8 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
                 return false;
             }
         });
-        if (!SharedPreferenceUtil.getVersionPoint() && SystemUtil.isWifiConnected()) {
-            SharedPreferenceUtil.setVersionPoint(true);
+        if (!mPresenter.getVersionPoint() && SystemUtil.isWifiConnected()) {
+            mPresenter.setVersionPoint(true);
             try {
                 PackageManager pm = getPackageManager();
                 PackageInfo pi = pm.getPackageInfo(getPackageName(), PackageManager.GET_ACTIVITIES);
@@ -201,11 +200,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainCon
         mSearchView.setMenuItem(item);
         mSearchMenuItem = item;
         return true;
-    }
-
-    @Override
-    public void showError(String msg) {
-        SnackbarUtil.showShort(mToolbar,msg);
     }
 
     @Override

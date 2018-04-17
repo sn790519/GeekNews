@@ -9,13 +9,12 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import com.codeest.geeknews.R;
-import com.codeest.geeknews.base.BaseActivity;
+import com.codeest.geeknews.app.Constants;
+import com.codeest.geeknews.base.RootActivity;
 import com.codeest.geeknews.model.bean.SectionChildListBean;
-import com.codeest.geeknews.presenter.SectionChildPresenter;
-import com.codeest.geeknews.presenter.contract.SectionChildContract;
+import com.codeest.geeknews.presenter.zhihu.SectionChildPresenter;
+import com.codeest.geeknews.base.contract.zhihu.SectionChildContract;
 import com.codeest.geeknews.ui.zhihu.adapter.SectionChildAdapter;
-import com.codeest.geeknews.util.SnackbarUtil;
-import com.codeest.geeknews.widget.ProgressImageView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,16 +25,14 @@ import butterknife.BindView;
  * Created by codeest on 16/8/28.
  */
 
-public class SectionActivity extends BaseActivity<SectionChildPresenter> implements SectionChildContract.View {
+public class SectionActivity extends RootActivity<SectionChildPresenter> implements SectionChildContract.View {
 
-    @BindView(R.id.rv_section_content)
+    @BindView(R.id.view_main)
     RecyclerView rvSectionContent;
     @BindView(R.id.swipe_refresh)
     SwipeRefreshLayout swipeRefresh;
     @BindView(R.id.tool_bar)
     Toolbar mToolBar;
-    @BindView(R.id.iv_progress)
-    ProgressImageView ivProgress;
 
     List<SectionChildListBean.StoriesBean> mList;
     SectionChildAdapter mAdapter;
@@ -55,6 +52,7 @@ public class SectionActivity extends BaseActivity<SectionChildPresenter> impleme
 
     @Override
     protected void initEventAndData() {
+        super.initEventAndData();
         Intent intent = getIntent();
         id = intent.getIntExtra("id", 0);
         title = intent.getStringExtra("title");
@@ -77,7 +75,7 @@ public class SectionActivity extends BaseActivity<SectionChildPresenter> impleme
                 mAdapter.notifyItemChanged(position);
                 Intent intent = new Intent();
                 intent.setClass(mContext, ZhihuDetailActivity.class);
-                intent.putExtra("id", mList.get(position).getId());
+                intent.putExtra(Constants.IT_ZHIHU_DETAIL_ID, mList.get(position).getId());
                 if (shareView != null) {
                     mContext.startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(mContext, shareView, "shareView").toBundle());
                 } else {
@@ -86,28 +84,25 @@ public class SectionActivity extends BaseActivity<SectionChildPresenter> impleme
             }
         });
         mPresenter.getThemeChildData(id);
-        ivProgress.start();
+        stateLoading();
     }
 
     @Override
     public void showContent(SectionChildListBean sectionChildListBean) {
         if(swipeRefresh.isRefreshing()) {
             swipeRefresh.setRefreshing(false);
-        } else {
-            ivProgress.stop();
         }
+        stateMain();
         mList.clear();
         mList.addAll(sectionChildListBean.getStories());
         mAdapter.notifyDataSetChanged();
     }
 
     @Override
-    public void showError(String msg) {
+    public void stateError() {
+        super.stateError();
         if(swipeRefresh.isRefreshing()) {
             swipeRefresh.setRefreshing(false);
-        } else {
-            ivProgress.stop();
         }
-        SnackbarUtil.showShort(getWindow().getDecorView(),msg);
     }
 }

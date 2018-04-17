@@ -6,14 +6,13 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
 import com.codeest.geeknews.R;
-import com.codeest.geeknews.base.BaseFragment;
+import com.codeest.geeknews.app.Constants;
+import com.codeest.geeknews.base.RootFragment;
+import com.codeest.geeknews.base.contract.zhihu.ThemeContract;
 import com.codeest.geeknews.model.bean.ThemeListBean;
-import com.codeest.geeknews.presenter.ThemePresenter;
-import com.codeest.geeknews.presenter.contract.ThemeContract;
+import com.codeest.geeknews.presenter.zhihu.ThemePresenter;
 import com.codeest.geeknews.ui.zhihu.activity.ThemeActivity;
 import com.codeest.geeknews.ui.zhihu.adapter.ThemeAdapter;
-import com.codeest.geeknews.util.SnackbarUtil;
-import com.codeest.geeknews.widget.ProgressImageView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,14 +22,12 @@ import butterknife.BindView;
 /**
  * Created by codeest on 2016/8/11.
  */
-public class ThemeFragment extends BaseFragment<ThemePresenter> implements ThemeContract.View {
+public class ThemeFragment extends RootFragment<ThemePresenter> implements ThemeContract.View {
 
-    @BindView(R.id.rv_content)
+    @BindView(R.id.view_main)
     RecyclerView rvThemeList;
     @BindView(R.id.swipe_refresh)
     SwipeRefreshLayout swipeRefresh;
-    @BindView(R.id.iv_progress)
-    ProgressImageView ivProgress;
 
     ThemeAdapter mAdapter;
     List<ThemeListBean.OthersBean> mList = new ArrayList<>();
@@ -47,6 +44,7 @@ public class ThemeFragment extends BaseFragment<ThemePresenter> implements Theme
 
     @Override
     protected void initEventAndData() {
+        super.initEventAndData();
         mAdapter = new ThemeAdapter(mContext, mList);
         rvThemeList.setLayoutManager(new GridLayoutManager(mContext, 2));
         rvThemeList.setAdapter(mAdapter);
@@ -55,7 +53,7 @@ public class ThemeFragment extends BaseFragment<ThemePresenter> implements Theme
             public void onItemClick(int id) {
                 Intent intent = new Intent();
                 intent.setClass(mContext, ThemeActivity.class);
-                intent.putExtra("id", id);
+                intent.putExtra(Constants.IT_ZHIHU_THEME_ID, id);
                 mContext.startActivity(intent);
             }
         });
@@ -66,28 +64,25 @@ public class ThemeFragment extends BaseFragment<ThemePresenter> implements Theme
             }
         });
         mPresenter.getThemeData();
-        ivProgress.start();
+        stateLoading();
     }
 
     @Override
     public void showContent(ThemeListBean themeListBean) {
         if(swipeRefresh.isRefreshing()) {
             swipeRefresh.setRefreshing(false);
-        } else {
-            ivProgress.stop();
         }
+        stateMain();
         mList.clear();
         mList.addAll(themeListBean.getOthers());
         mAdapter.notifyDataSetChanged();
     }
 
     @Override
-    public void showError(String msg) {
+    public void stateError() {
+        super.stateError();
         if(swipeRefresh.isRefreshing()) {
             swipeRefresh.setRefreshing(false);
-        } else {
-            ivProgress.stop();
         }
-        SnackbarUtil.showShort(rvThemeList,msg);
     }
 }
